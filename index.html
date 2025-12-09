@@ -3,499 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API Hole | CVE-2025-13606 Analysis</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <title>WordPress Vulnerability Scanner</title>
     <style>
-        :root {
-            --color-background: #f8fafc;
-            --color-surface: #ffffff;
-            --color-primary: #1e40af;
-            --color-primary-light: #3b82f6;
-            --color-secondary: #64748b;
-            --color-accent: #0f766e;
-            --color-border: #e2e8f0;
-            --color-text: #334155;
-            --color-text-light: #64748b;
-            --color-warning-bg: #fef3c7;
-            --color-warning-border: #f59e0b;
-            --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-            --shadow-card-hover: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            --radius-card: 12px;
-            --radius-input: 8px;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            line-height: 1.6;
-            color: var(--color-text);
-            background-color: var(--color-background);
-            background-image: 
-                radial-gradient(circle at 15% 50%, rgba(30, 64, 175, 0.05) 0%, transparent 25%),
-                radial-gradient(circle at 85% 30%, rgba(15, 118, 110, 0.05) 0%, transparent 25%);
-            min-height: 100vh;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        header {
-            text-align: center;
-            padding: 50px 20px 30px;
-            margin-bottom: 40px;
-            border-bottom: 1px solid var(--color-border);
-        }
-        
-        .logo {
-            font-size: 2.8rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-            color: var(--color-primary);
-            letter-spacing: -0.5px;
-        }
-        
-        .logo-subtitle {
-            font-size: 1rem;
-            color: var(--color-secondary);
-            font-weight: 500;
-            margin-bottom: 20px;
-        }
-        
-        .tagline {
-            font-size: 1.25rem;
-            color: var(--color-text-light);
-            max-width: 600px;
-            margin: 0 auto 25px;
-            font-weight: 400;
-        }
-        
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 8px 18px;
-            background: #dbeafe;
-            color: var(--color-primary);
-            border-radius: 50px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            border: 1px solid #bfdbfe;
-        }
-        
-        .status-badge::before {
-            content: "";
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background-color: #10b981;
-            margin-right: 10px;
-        }
-        
-        .main-content {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 30px;
-            margin-bottom: 60px;
-        }
-        
-        @media (min-width: 768px) {
-            .main-content {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
-        
-        .card {
-            background: var(--color-surface);
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-card);
-            padding: 30px;
-            transition: all 0.3s ease;
-            box-shadow: var(--shadow-card);
-        }
-        
-        .card:hover {
-            box-shadow: var(--shadow-card-hover);
-            border-color: var(--color-primary-light);
-        }
-        
-        h2 {
-            color: var(--color-primary);
-            margin-bottom: 20px;
-            font-size: 1.5rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-        }
-        
-        h2::before {
-            content: "";
-            display: inline-block;
-            width: 4px;
-            height: 22px;
-            background-color: var(--color-primary);
-            margin-right: 12px;
-            border-radius: 2px;
-        }
-        
-        h3 {
-            color: var(--color-text);
-            margin: 20px 0 12px;
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-        
-        p {
-            margin-bottom: 18px;
-            color: var(--color-text);
-        }
-        
-        .cve-highlight {
-            display: inline-block;
-            background: #f1f5f9;
-            padding: 4px 12px;
-            border-radius: 6px;
-            font-family: 'Roboto Mono', monospace;
-            font-size: 0.95rem;
-            color: #1e293b;
-            border-left: 3px solid var(--color-primary);
-        }
-        
-        .risk-indicator {
-            display: inline-flex;
-            align-items: center;
-            padding: 6px 14px;
-            background: #fef3c7;
-            color: #92400e;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            margin: 10px 0;
-        }
-        
-        .tool-demo {
-            background: #f8fafc;
-            padding: 25px;
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-card);
-            margin-top: 20px;
-        }
-        
-        .demo-form {
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
-        }
-        
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        
-        label {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--color-text);
-        }
-        
-        input {
-            padding: 14px 18px;
-            background: white;
-            border: 1px solid var(--color-border);
-            color: var(--color-text);
-            font-family: 'Inter', sans-serif;
-            border-radius: var(--radius-input);
-            font-size: 1rem;
-            transition: all 0.2s;
-        }
-        
-        input:focus {
-            outline: none;
-            border-color: var(--color-primary-light);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-        
-        button {
-            padding: 14px 24px;
-            background: var(--color-primary);
-            border: none;
-            color: white;
-            font-family: 'Inter', sans-serif;
-            font-weight: 600;
-            border-radius: var(--radius-input);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 1rem;
-        }
-        
-        button:hover {
-            background: var(--color-primary-light);
-            transform: translateY(-1px);
-        }
-        
-        .result {
-            margin-top: 25px;
-            padding: 20px;
-            background: #f0f9ff;
-            border: 1px solid #bae6fd;
-            border-radius: var(--radius-input);
-            display: none;
-        }
-        
-        .result-title {
-            font-weight: 600;
-            color: var(--color-primary);
-            margin-bottom: 10px;
-        }
-        
-        footer {
-            text-align: center;
-            padding: 40px 20px;
-            border-top: 1px solid var(--color-border);
-            margin-top: 40px;
-            font-size: 0.9rem;
-            color: var(--color-text-light);
-        }
-        
-        .footer-links {
-            display: flex;
-            justify-content: center;
-            gap: 25px;
-            margin-top: 15px;
-        }
-        
-        .footer-link {
-            color: var(--color-primary);
-            text-decoration: none;
-            font-weight: 500;
-        }
-        
-        .footer-link:hover {
-            text-decoration: underline;
-        }
-        
-        .warning {
-            color: #92400e;
-            background: var(--color-warning-bg);
-            border: 1px solid var(--color-warning-border);
-            padding: 16px;
-            border-radius: var(--radius-input);
-            margin: 20px 0;
-            font-size: 0.95rem;
-        }
-        
-        .info-box {
-            background: #ecfdf5;
-            border: 1px solid #a7f3d0;
-            border-radius: var(--radius-input);
-            padding: 16px;
-            margin-top: 20px;
-        }
-        
-        .info-box strong {
-            color: #065f46;
-        }
-        
-        .tech-detail {
-            background: #f8fafc;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 15px 0;
-            font-family: 'Roboto Mono', monospace;
-            font-size: 0.9rem;
-            overflow-x: auto;
-        }
-        
-        .cvss-badge {
-            display: inline-flex;
-            align-items: center;
-            background: #f1f5f9;
-            padding: 6px 14px;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #475569;
-            margin: 10px 5px 10px 0;
-        }
-        
-        .cvss-badge.medium {
-            background: #fef3c7;
-            color: #92400e;
-        }
-        
-        .data-point {
-            display: flex;
-            margin-bottom: 12px;
-        }
-        
-        .data-point-label {
-            font-weight: 600;
-            min-width: 140px;
-            color: var(--color-secondary);
-        }
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .container { background: #f5f5f5; padding: 20px; border-radius: 8px; }
+        input { width: 70%; padding: 10px; margin-right: 10px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .result { margin-top: 20px; padding: 15px; background: white; border-radius: 4px; display: none; }
     </style>
 </head>
 <body>
     <div class="container">
-        <header>
-            <div class="logo">API HOLE</div>
-            <div class="logo-subtitle">VULNERABILITY INTELLIGENCE PLATFORM</div>
-            <p class="tagline">OSINT-driven analysis of publicly documented security vulnerabilities to assess organizational exposure and drive remediation.</p>
-            <div class="status-badge">ACTIVE MONITORING • CVE-2025-13606</div>
-        </header>
-        
-        <div class="main-content">
-            <div class="card">
-                <h2>Vulnerability Analysis</h2>
-                <p>This platform provides diagnostic analysis of CVE-2025-13606, a Cross-Site Request Forgery (CSRF) vulnerability affecting the WordPress "Export All Posts, Products, Orders, Refunds & Users" plugin.</p>
-                
-                <div class="warning">
-                    <strong>Research Notice:</strong> This service performs non-intrusive, OSINT-based analysis of publicly documented vulnerabilities (CVEs). All activities are conducted for security awareness and educational purposes.
-                </div>
-                
-                <h3>Technical Summary</h3>
-                
-                <div class="data-point">
-                    <div class="data-point-label">CVE Identifier:</div>
-                    <div class="cve-highlight">CVE-2025-13606</div>
-                </div>
-                
-                <div class="data-point">
-                    <div class="data-point-label">Affected Software:</div>
-                    <div>Export All Posts, Products, Orders... WordPress Plugin (≤ v2.19)</div>
-                </div>
-                
-                <div class="data-point">
-                    <div class="data-point-label">Vulnerability Type:</div>
-                    <div>Cross-Site Request Forgery (CSRF)</div>
-                </div>
-                
-                <div class="data-point">
-                    <div class="data-point-label">CVSS 3.1 Score:</div>
-                    <div class="cvss-badge medium">6.5 MEDIUM</div>
-                </div>
-                
-                <div class="data-point">
-                    <div class="data-point-label">Primary Risk:</div>
-                    <div class="risk-indicator">Unauthorized Data Export</div>
-                </div>
-                
-                <h3>Impact Assessment</h3>
-                <p>Missing nonce validation in the plugin's <code>parseData</code> function allows unauthenticated attackers to craft requests that, when executed by an administrator, trigger exports of sensitive data including user information, email addresses, and WooCommerce data.</p>
-                
-                <div class="info-box">
-                    <strong>Data Exposure:</strong> Successful exploitation results in the generation of CSV files containing sensitive information, stored in publicly accessible directories, creating a direct data breach vector.
-                </div>
-            </div>
-            
-            <div class="card">
-                <h2>Exposure Diagnostics</h2>
-                <p>Use this tool to perform a non-intrusive scan for potential indicators of CVE-2025-13606 exposure on a target WordPress installation.</p>
-                
-                <div class="tool-demo">
-                    <h3>WordPress Plugin Exposure Check</h3>
-                    <p>Enter a WordPress site URL to initiate diagnostic checks for plugin presence and common exposure indicators.</p>
-                    
-                    <form class="demo-form" id="vulnCheckForm">
-                        <div class="input-group">
-                            <label for="targetUrl">Target Website URL</label>
-                            <input type="url" id="targetUrl" placeholder="https://example.com" required>
-                        </div>
-                        <button type="submit">Initiate Diagnostic Scan</button>
-                    </form>
-                    
-                    <div class="result" id="result">
-                        <div class="result-title">Scan Results</div>
-                        <div id="output">Results will appear here...</div>
-                    </div>
-                </div>
-                
-                <div style="margin-top: 25px;">
-                    <h3>Methodology & Limitations</h3>
-                    <p>This diagnostic tool performs OSINT-based reconnaissance including:</p>
-                    <ul style="padding-left: 20px; margin-bottom: 15px;">
-                        <li>Public plugin directory enumeration</li>
-                        <li>HTTP header analysis for version indicators</li>
-                        <li>Common endpoint fingerprinting</li>
-                    </ul>
-                    <p><strong>Note:</strong> This tool does not attempt exploitation or unauthorized access. It identifies potential exposure based on publicly accessible information.</p>
-                    
-                    <div class="tech-detail">
-                        # Example diagnostic check (simulated)<br>
-                        GET /wp-content/plugins/export-all-posts/readme.txt<br>
-                        GET /wp-admin/admin-ajax.php<br>
-                        # Analyzing response headers and content for version indicators
-                    </div>
-                    
-                    <p><a class="footer-link" href="https://github.com/API-Hole/CVE-2025-13606-PoC" target="_blank">View Complete Technical Analysis on GitHub →</a></p>
-                </div>
-            </div>
+        <h1>WordPress Plugin Vulnerability Scanner</h1>
+        <p>Enter a WordPress site URL to check for vulnerable plugin exposure:</p>
+        <div>
+            <input type="text" id="urlInput" placeholder="https://example.com">
+            <button onclick="scanSite()">Scan Website</button>
         </div>
-        
-        <footer>
-            <p>API Hole | Open-Source Vulnerability Intelligence</p>
-            <p style="margin-top: 8px; font-size: 0.85rem;">This platform operates on principles of transparency, responsible disclosure, and security awareness.</p>
-            
-            <div class="footer-links">
-                <a class="footer-link" href="mailto:ghostnetsec96@gmail.com">ghostnetsec96@gmail.com</a>
-                <a class="footer-link" href="https://github.com/API-Hole" target="_blank">GitHub</a>
-                <a class="footer-link" href="#" onclick="return false;">Advisories</a>
-                <a class="footer-link" href="#" onclick="return false;">Methodology</a>
-            </div>
-            
-            <p style="margin-top: 20px; font-size: 0.8rem; color: #94a3b8;">Research published in accordance with responsible disclosure frameworks. CVE data sourced from public repositories.</p>
-        </footer>
+        <div id="loading" style="display:none;">Scanning... Please wait.</div>
+        <div id="result" class="result"></div>
     </div>
 
     <script>
-        document.getElementById('vulnCheckForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const targetUrl = document.getElementById('targetUrl').value;
+        function scanSite() {
+            const url = document.getElementById('urlInput').value;
             const resultDiv = document.getElementById('result');
-            const outputDiv = document.getElementById('output');
+            const loadingDiv = document.getElementById('loading');
             
-            if (!targetUrl) {
-                outputDiv.innerHTML = '<div style="color:#dc2626; padding: 10px; background: #fef2f2; border-radius: 6px;">Please enter a valid URL for analysis.</div>';
-                resultDiv.style.display = 'block';
+            if (!url) {
+                alert('Please enter a URL');
                 return;
             }
             
-            // Clear previous results
-            outputDiv.innerHTML = '<div style="display: flex; align-items: center; color: #475569;"><svg style="width: 20px; height: 20px; margin-right: 10px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Running OSINT diagnostics... (Simulated)</div>';
-            resultDiv.style.display = 'block';
+            loadingDiv.style.display = 'block';
+            resultDiv.style.display = 'none';
             
-            // Simulate scanning delay with realistic steps
-            setTimeout(() => {
-                const simulatedSteps = [
-                    `[1/4] Resolving target: <code>${targetUrl}</code>`,
-                    `[2/4] Enumerating WordPress plugin directories...`,
-                    `[3/4] Checking for export plugin fingerprints...`,
-                    `[4/4] Analyzing HTTP headers for version indicators...`
-                ];
+            // Replace with your PythonAnywhere URL
+            const apiUrl = 'https://ghostnet.pythonanywhere.com/api/diagnose';
+            
+            fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url: url })
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingDiv.style.display = 'none';
+                resultDiv.style.display = 'block';
                 
-                let stepsHTML = '';
-                simulatedSteps.forEach(step => {
-                    stepsHTML += `<div style="margin-bottom: 8px; font-family: 'Roboto Mono', monospace; font-size: 0.9rem; color: #475569;">${step}</div>`;
-                });
+                let html = `<h3>Scan Results for ${data.target}</h3>`;
+                html += `<p><strong>Status:</strong> ${data.summary.vulnerability_potential}</p>`;
+                html += `<p><strong>Recommendation:</strong> ${data.summary.recommendation}</p>`;
                 
-                outputDiv.innerHTML = stepsHTML + 
-                    `<div style="margin-top: 20px; padding: 15px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px;">
-                        <strong style="color: #166534;">Diagnostic Complete</strong><br>
-                        <span style="color: #475569; font-size: 0.95rem;">This simulated scan identifies potential exposure vectors. A comprehensive security audit is recommended for confirmation.</span>
-                    </div>
-                    <div style="margin-top: 15px; font-size: 0.9rem; color: #64748b;">
-                        <strong>Recommendation:</strong> Verify plugin version and implement CSRF protections immediately.
-                    </div>`;
-            }, 2500);
-        });
+                if (data.indicators_found.length > 0) {
+                    html += `<h4>Indicators Found:</h4><ul>`;
+                    data.indicators_found.forEach(indicator => {
+                        html += `<li>${indicator}</li>`;
+                    });
+                    html += `</ul>`;
+                }
+                
+                html += `<p><small>Scan ID: ${data.scan_id} | Duration: ${data.scan_duration}s</small></p>`;
+                resultDiv.innerHTML = html;
+            })
+            .catch(error => {
+                loadingDiv.style.display = 'none';
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            });
+        }
     </script>
 </body>
 </html>
